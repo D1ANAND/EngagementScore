@@ -56,8 +56,32 @@ async def view_model(modelId: str):
         EngagementScore=database[modelId]["EngagementScore"]
     )
 
+class UpdateForkCountRequest(BaseModel):
+    modelId: str
+
+@app.post("/updateForkCount")
+async def update_fork_count(request: UpdateForkCountRequest):
+    if request.modelId not in database:
+        raise HTTPException(status_code=404, detail="Model ID not found")
+    database[request.modelId]["ForkCount"] = database[request.modelId].get("ForkCount", 0) + 1
+    return {"message": "Fork count updated successfully"}
+
+
+class FetchForkCountResponse(BaseModel):
+    modelId: str
+    ForkCount: int
+
+@app.get("/fetchForkCount/{modelId}", response_model=FetchForkCountResponse)
+async def fetch_fork_count(modelId: str):
+    if modelId not in database:
+        raise HTTPException(status_code=404, detail="Model ID not found")
+    return FetchForkCountResponse(
+        modelId=modelId,
+        ForkCount=database[modelId].get("ForkCount", 0)
+    )
+
 
 if __name__ == "__main__":
     import uvicorn
     # uvicorn.run(app)
-    uvicorn.run(app,port=int(os.environ.get('PORT', 8080)), host="0.0.0.0")
+    uvicorn.run(app,port=int(os.environ.get('PORT', 8080)), host="127.0.0.1")
