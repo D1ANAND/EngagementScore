@@ -18,17 +18,26 @@ database = {}
 
 class CreateModelRequest(BaseModel):
     modelId: str
-    ContractAddress: str
+    contractAddress: str
 
 @app.post("/create")
-async def create_model(request: CreateModelRequest):
-    if request.modelId in database:
-        raise HTTPException(status_code=400, detail="Model ID already exists")
-    database[request.modelId] = {
-        "ContractAddress": request.ContractAddress,
+async def create(request: CreateModelRequest):
+    model_id = request.modelId
+    contract_addr = request.contractAddress
+    
+    if model_id in database:
+        if database[model_id]["ContractAddress"] != contract_addr:
+            # Reset engagement score if contract address changes
+            database[model_id]["EngagementScore"] = 0
+        else:
+            raise HTTPException(status_code=400, detail="Model ID already exists")
+    
+    database[model_id] = {
+        "ContractAddress": contract_addr,
         "EngagementScore": 0
     }
     return {"message": "Model created successfully"}
+
 
 
 class UpdateModelRequest(BaseModel):
@@ -47,14 +56,19 @@ class ViewModelResponse(BaseModel):
     EngagementScore: int
 
 
-@app.get("/view/{modelId}", response_model=ViewModelResponse)
-async def view_model(modelId: str):
+class ViewModelRequest(BaseModel):
+    modelId: str
+
+@app.post("/view", response_model=ViewModelResponse)
+async def view_model(request: ViewModelRequest):
+    modelId = request.modelId
     if modelId not in database:
         raise HTTPException(status_code=404, detail="Model ID not found")
     return ViewModelResponse(
         modelId=modelId,
         EngagementScore=database[modelId]["EngagementScore"]
     )
+
 
 class UpdateForkCountRequest(BaseModel):
     modelId: str
@@ -65,6 +79,8 @@ async def update_fork_count(request: UpdateForkCountRequest):
         raise HTTPException(status_code=404, detail="Model ID not found")
     database[request.modelId]["ForkCount"] = database[request.modelId].get("ForkCount", 0) + 1
     return {"message": "Fork count updated successfully"}
+
+
 
 
 class FetchForkCountResponse(BaseModel):
