@@ -82,13 +82,16 @@ async def update_fork_count(request: UpdateForkCountRequest):
 
 
 
+class FetchForkCountRequest(BaseModel):
+    modelId: str
 
 class FetchForkCountResponse(BaseModel):
     modelId: str
     ForkCount: int
 
-@app.get("/fetchForkCount/{modelId}", response_model=FetchForkCountResponse)
-async def fetch_fork_count(modelId: str):
+@app.post("/fetchForkCount", response_model=FetchForkCountResponse)
+async def fetch_fork_count(request: FetchForkCountRequest):
+    modelId = request.modelId
     if modelId not in database:
         raise HTTPException(status_code=404, detail="Model ID not found")
     return FetchForkCountResponse(
