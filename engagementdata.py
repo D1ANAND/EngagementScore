@@ -59,17 +59,15 @@ class ViewModelResponse(BaseModel):
 class ViewModelRequest(BaseModel):
     modelId: str
 
-@app.post("/view", response_model=ViewModelResponse)
-async def view_model(request: ViewModelRequest):
-    modelId = request.modelId
+
+@app.get("/view/{modelId}", response_model=ViewModelResponse)
+async def view_model(modelId: str):
     if modelId not in database:
         raise HTTPException(status_code=404, detail="Model ID not found")
     return ViewModelResponse(
         modelId=modelId,
         EngagementScore=database[modelId]["EngagementScore"]
     )
-
-
 class UpdateForkCountRequest(BaseModel):
     modelId: str
 
